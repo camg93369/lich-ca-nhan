@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lịch Cá Nhân</title>
+    <title>Lịch Cá Nhân - Đam Mê & Tập Trung</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -31,7 +31,7 @@
     <header class="border-b border-borderGold bg-cardBg py-4 px-6 flex justify-between items-center">
         <div class="flex items-center space-x-3">
             <i class="fa-solid fa-crown text-gold text-2xl gold-glow"></i>
-            <h1 class="text-xl font-bold text-gold tracking-wide">LỊCH TRÌNH</h1>
+            <h1 class="text-xl font-bold text-gold tracking-wide">NHẬT KÝ & LỊCH TRÌNH</h1>
         </div>
         <div class="flex items-center space-x-4">
             <button onclick="requestNotificationPermission()" class="text-xs bg-borderGold text-gold px-3 py-1.5 rounded-lg border border-gold/30 hover:bg-gold/20 transition">
@@ -138,7 +138,19 @@
             showLoading(true);
             try {
                 let response = await fetch(SCRIPT_URL);
-                eventsData = await response.json();
+                let rawData = await response.json();
+                
+                // CHUẨN HÓA DỮ LIỆU NGÀY THÁNG CỰC KỲ AN TOÀN
+                eventsData = rawData.map(ev => {
+                    let dateStr = "";
+                    if (ev.date) {
+                        // Cắt lấy đúng phần YYYY-MM-DD bất kể dữ liệu trả về kiểu gì
+                        let dParts = String(ev.date).split('T')[0].split(' ')[0];
+                        dateStr = dParts;
+                    }
+                    return { ...ev, date: dateStr };
+                });
+
                 renderCalendar();
                 renderListView();
             } catch (error) {
@@ -147,7 +159,6 @@
             showLoading(false);
         }
 
-        // NHẬP XONG LÀ HIỆN NGAY LẬP TỨC TRÊN LỊCH & SHEET
         async function handleFormSubmit(e) {
             e.preventDefault();
             const title = document.getElementById('event-title').value;
@@ -156,16 +167,15 @@
             const description = document.getElementById('event-desc').value;
             const id = 'EV-' + Date.now();
 
-            // 1. Đưa ngay vào mảng dữ liệu trên web để hiển thị lên lịch lập tức
+            // Đưa ngay vào mảng web để hiện lên lịch lập tức
             const newEvent = { id, title, date, time, description, status: "Chưa xong" };
             eventsData.push(newEvent);
             renderCalendar();
             renderListView();
 
-            // Reset form ngay cho gọn
             document.getElementById('event-form').reset();
 
-            // 2. Gửi ngầm về Google Sheet phía sau
+            // Gửi ngầm lên Google Sheet
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -181,12 +191,10 @@
         async function completeEvent(id) {
             if(!confirm("Bạn có chắc muốn hoàn thành và xóa sự kiện này không?")) return;
             
-            // Xóa ngay lập tức trên giao diện web cho mượt
             eventsData = eventsData.filter(ev => ev.id !== id);
             renderCalendar();
             renderListView();
 
-            // Gửi lệnh xóa ngầm về Google Sheet
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -224,7 +232,7 @@
             }
         }
 
-        // Render Lịch Tháng - So sánh bằng số nguyên (Năm/Tháng/Ngày) chuẩn xác tuyệt đối
+        // RENDER LỊCH THÁNG - So sánh chuỗi ngày chuẩn xác tuyệt đối
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
             grid.innerHTML = '';
@@ -241,13 +249,12 @@
             }
 
             for (let day = 1; day <= totalDays; day++) {
-                const dayEvents = eventsData.filter(ev => {
-                    if (!ev.date) return false;
-                    let evDate = new Date(ev.date);
-                    return evDate.getFullYear() === year && 
-                           evDate.getMonth() === month && 
-                           evDate.getDate() === day;
-                });
+                const mStr = String(month + 1).padStart(2, '0');
+                const dStr = String(day).padStart(2, '0');
+                const targetDateStr = `${year}-${mStr}-${dStr}`; // Chuẩn YYYY-MM-DD của ô lịch
+
+                // Lọc sự kiện so sánh trực tiếp chuỗi ngày
+                const dayEvents = eventsData.filter(ev => ev.date === targetDateStr);
 
                 let eventsHtml = '';
                 dayEvents.forEach(ev => {
