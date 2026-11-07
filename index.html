@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch Cá Nhân - Đam Mê & Tập Trung</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gold: '#FFD700',
+                        darkBg: '#0f0f0f',
+                        cardBg: '#1a1a1a',
+                        borderGold: '#332b00'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0f0f0f; color: #e5e5e5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .gold-glow { text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+        .border-gold-glow { box-shadow: 0 0 15px rgba(255, 215, 0, 0.15); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-borderGold bg-cardBg py-4 px-6 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <i class="fa-solid fa-crown text-gold text-2xl gold-glow"></i>
+            <h1 class="text-xl font-bold text-gold tracking-wide">NHẬT KÝ & LỊCH TRÌNH</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <button onclick="requestNotificationPermission()" class="text-xs bg-borderGold text-gold px-3 py-1.5 rounded-lg border border-gold/30 hover:bg-gold/20 transition">
+                <i class="fa-solid fa-bell mr-1"></i> Bật Thông Báo
+            </button>
+            <span id="current-date-display" class="text-sm text-gray-400"></span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Cột Trái: Nhập liệu & Pomodoro -->
+        <div class="space-y-6">
+            <!-- Form Thêm Sự Kiện -->
+            <div class="bg-cardBg border border-borderGold rounded-xl p-5 border-gold-glow">
+                <h2 class="text-lg font-semibold text-gold mb-4 flex items-center">
+                    <i class="fa-solid fa-pen-nib mr-2"></i> Thêm Sự Kiện & Ghi Chú
+                </h2>
+                <form id="event-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs uppercase text-gray-400 mb-1 font-semibold">Tiêu đề việc cần làm</label>
+                        <input type="text" id="event-title" required class="w-full bg-darkBg border border-borderGold rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-gold">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs uppercase text-gray-400 mb-1 font-semibold">Ngày</label>
+                            <input type="date" id="event-date" required class="w-full bg-darkBg border border-borderGold rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-gold">
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase text-gray-400 mb-1 font-semibold">Giờ</label>
+                            <input type="time" id="event-time" required class="w-full bg-darkBg border border-borderGold rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-gold">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase text-gray-400 mb-1 font-semibold">Ghi chú chi tiết</label>
+                        <textarea id="event-desc" rows="2" class="w-full bg-darkBg border border-borderGold rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-gold"></textarea>
+                    </div>
+                    <button type="submit" id="submit-btn" class="w-full bg-gold text-darkBg font-bold py-2.5 rounded-lg hover:bg-yellow-400 transition flex items-center justify-center">
+                        <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Lưu & Đồng Bộ Google Sheet
+                    </button>
+                </form>
+            </div>
+
+            <!-- Pomodoro Focus Timer -->
+            <div class="bg-cardBg border border-borderGold rounded-xl p-5 border-gold-glow text-center">
+                <h2 class="text-lg font-semibold text-gold mb-2 flex items-center justify-center">
+                    <i class="fa-solid fa-clock mr-2"></i> Bộ Đếm Thời Gian Tập Trung
+                </h2>
+                <p class="text-xs text-gray-400 mb-4">Pomodoro: 25 phút làm việc / 5 phút nghỉ</p>
+                <div id="timer-display" class="text-4xl font-mono font-bold text-gold mb-4 gold-glow">25:00</div>
+                <div class="flex justify-center space-x-3">
+                    <button onclick="startTimer()" class="bg-gold text-darkBg px-4 py-2 rounded-lg font-bold text-sm hover:bg-yellow-400"><i class="fa-solid fa-play"></i> Bắt đầu</button>
+                    <button onclick="pauseTimer()" class="bg-borderGold text-gold px-4 py-2 rounded-lg font-bold text-sm border border-gold/30 hover:bg-gold/20"><i class="fa-solid fa-pause"></i> Tạm dừng</button>
+                    <button onclick="resetTimer()" class="bg-borderGold text-gray-400 px-4 py-2 rounded-lg font-bold text-sm border border-gray-700 hover:text-white"><i class="fa-solid fa-rotate-right"></i> Đặt lại</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột Phải: Lịch & Danh sách công việc -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Toolbar Lịch & Chế độ xem -->
+            <div class="bg-cardBg border border-borderGold rounded-xl p-4 flex flex-wrap justify-between items-center gap-4">
+                <div class="flex space-x-2">
+                    <button onclick="switchView('month')" id="btn-month" class="px-4 py-2 rounded-lg text-sm font-semibold bg-gold text-darkBg">Lịch Tháng</button>
+                    <button onclick="switchView('list')" id="btn-list" class="px-4 py-2 rounded-lg text-sm font-semibold bg-darkBg text-gray-400 border border-borderGold hover:text-gold">Danh Sách Việc</button>
+                </div>
+                <div id="loading-status" class="text-xs text-gold animate-pulse hidden"><i class="fa-solid fa-rotate mr-1"></i> Đang đồng bộ Google Sheets...</div>
+            </div>
+
+            <!-- Giao diện hiển thị chính -->
+            <div class="bg-cardBg border border-borderGold rounded-xl p-5 min-h-[400px]">
+                <!-- View Lịch Tháng -->
+                <div id="month-view">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="month-title" class="text-lg font-bold text-gold">Tháng ...</h3>
+                        <div class="space-x-2">
+                            <button onclick="changeMonth(-1)" class="p-2 bg-darkBg border border-borderGold rounded hover:text-gold"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button onclick="changeMonth(1)" class="p-2 bg-darkBg border border-borderGold rounded hover:text-gold"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 text-center font-semibold text-xs text-gray-400 mb-2">
+                        <div class="text-red-400">CN</div><div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div>
+                    </div>
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center text-sm">
+                        <!-- Ngày sẽ được render bằng JS -->
+                    </div>
+                </div>
+
+                <!-- View Danh Sách -->
+                <div id="list-view" class="hidden space-y-3">
+                    <h3 class="text-lg font-bold text-gold mb-2">Danh Sách Sự Kiện & Nhắc Nhở</h3>
+                    <div id="events-container" class="space-y-2">
+                        <!-- Danh sách sự kiện tải từ Google Sheet -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // DÁN URL GOOGLE APPS SCRIPT CỦA BẠN VÀO ĐÂY
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz0IU2-X0NU9h5F9l0rY3wTQklX1tYZKkF7x3vRwC-IrzqHKXXB351NQrvT-_iaTQ0M/exec";
+        let eventsData = [];
+        let currentDate = new Date();
+        let timerInterval = null;
+        let timeLeft = 25 * 60;
+
+        document.getElementById('current-date-display').innerText = new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        // Tải dữ liệu từ Google Sheet khi mở web
+        async function fetchEvents() {
+            if (SCRIPT_URL.includes("YOUR_GOOGLE_")) return;
+            showLoading(true);
+            try {
+                let response = await fetch(SCRIPT_URL);
+                eventsData = await response.json();
+                renderCalendar();
+                renderListView();
+            } catch (error) {
+                console.error("Lỗi tải dữ liệu:", error);
+            }
+            showLoading(false);
+        }
+
+        // Gửi dữ liệu mới lên Google Sheet
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            if (SCRIPT_URL.includes("YOUR_GOOGLE_")) {
+                alert("Vui lòng cấu hình SCRIPT_URL từ Google Apps Script trong mã nguồn!");
+                return;
+            }
+
+            const title = document.getElementById('event-title').value;
+            const date = document.getElementById('event-date').value;
+            const time = document.getElementById('event-time').value;
+            const description = document.getElementById('event-desc').value;
+            const id = 'EV-' + Date.now();
+
+            showLoading(true);
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'add', id, title, date, time, description })
+                });
+                
+                alert("Đã lưu và đồng bộ thành công về Google Sheet!");
+                document.getElementById('event-form').reset();
+                setTimeout(fetchEvents, 1500); // Tải lại dữ liệu sau 1.5s
+            } catch (error) {
+                alert("Có lỗi xảy ra khi lưu!");
+                showLoading(false);
+            }
+        }
+
+        function showLoading(show) {
+            const el = document.getElementById('loading-status');
+            if(show) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+
+        // Chuyển đổi giữa giao diện Lịch và Danh sách
+        function switchView(view) {
+            const monthView = document.getElementById('month-view');
+            const listView = document.getElementById('list-view');
+            const btnMonth = document.getElementById('btn-month');
+            const btnList = document.getElementById('btn-list');
+
+            if (view === 'month') {
+                monthView.classList.remove('hidden');
+                listView.classList.add('hidden');
+                btnMonth.className = "px-4 py-2 rounded-lg text-sm font-semibold bg-gold text-darkBg";
+                btnList.className = "px-4 py-2 rounded-lg text-sm font-semibold bg-darkBg text-gray-400 border border-borderGold hover:text-gold";
+            } else {
+                monthView.classList.add('hidden');
+                listView.classList.remove('hidden');
+                btnList.className = "px-4 py-2 rounded-lg text-sm font-semibold bg-gold text-darkBg";
+                btnMonth.className = "px-4 py-2 rounded-lg text-sm font-semibold bg-darkBg text-gray-400 border border-borderGold hover:text-gold";
+            }
+        }
+
+        // Render Lịch Tháng
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            document.getElementById('month-title').innerText = `Tháng ${month + 1} / ${year}`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const totalDays = new Date(year, month + 1, 0).getDate();
+
+            // Ô trống đầu tháng
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div class="p-2 text-gray-700"></div>`;
+            }
+
+            // Các ngày trong tháng
+            for (let day = 1; day <= totalDays; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const hasEvent = eventsData.some(ev => ev.date === dateStr);
+
+                grid.innerHTML += `
+                    <div class="p-2 h-20 border border-borderGold/50 rounded-lg flex flex-col justify-between bg-darkBg relative group hover:border-gold transition">
+                        <span class="text-xs font-semibold ${hasEvent ? 'text-gold font-bold' : 'text-gray-300'}">${day}</span>
+                        ${hasEvent ? '<span class="absolute bottom-2 right-2 w-2 h-2 bg-gold rounded-full shadow-[0_0_8px_#FFD700]"></span>' : ''}
+                    </div>
+                `;
+            }
+        }
+
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            renderCalendar();
+        }
+
+        // Render Danh Sách Việc
+        function renderListView() {
+            const container = document.getElementById('events-container');
+            container.innerHTML = '';
+            if (eventsData.length === 0) {
+                container.innerHTML = `<p class="text-gray-500 text-sm">Chưa có sự kiện nào được ghi nhận trên Google Sheet.</p>`;
+                return;
+            }
+
+            eventsData.forEach(ev => {
+                container.innerHTML += `
+                    <div class="bg-darkBg border border-borderGold p-3 rounded-lg flex justify-between items-center">
+                        <div>
+                            <h4 class="text-gold font-semibold text-sm">${ev.title}</h4>
+                            <p class="text-xs text-gray-400"><i class="fa-regular fa-calendar mr-1"></i>${ev.date} - <i class="fa-regular fa-clock mr-1"></i>${ev.time}</p>
+                            ${ev.description ? `<p class="text-xs text-gray-500 mt-1">${ev.description}</p>` : ''}
+                        </div>
+                        <span class="text-xs bg-gold/10 text-gold px-2 py-1 rounded border border-gold/30">${ev.status || 'Đang làm'}</span>
+                    </div>
+                `;
+            });
+        }
+
+        // Pomodoro Timer Logic
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer-display').innerText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            if (timerInterval) return;
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerDisplay();
+                } else {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    alert("Đã hoàn thành một phiên Pomodoro! Hãy nghỉ ngơi 5 phút nhé.");
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timeLeft = 25 * 60;
+            updateTimerDisplay();
+        }
+
+        // Trình duyệt thông báo
+        function requestNotificationPermission() {
+            if ("Notification" in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") alert("Đã bật quyền thông báo trình duyệt thành công!");
+                });
+            }
+        }
+
+        // Khởi chạy khi load trang
+        fetchEvents();
+    </script>
+</body>
+</html>
