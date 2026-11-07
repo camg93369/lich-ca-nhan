@@ -6,8 +6,6 @@
     <title>Lịch Cá Nhân - Đam Mê & Tập Trung</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- FullCalendar CSS & JS -->
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
     <script>
         tailwind.config = {
             theme: {
@@ -26,16 +24,6 @@
         body { background-color: #0f0f0f; color: #e5e5e5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .gold-glow { text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
         .border-gold-glow { box-shadow: 0 0 15px rgba(255, 215, 0, 0.15); }
-        /* Tùy chỉnh màu sắc lịch tối & vàng gold sang trọng */
-        .fc { --fc-border-color: #332b00; --fc-page-bg-color: #1a1a1a; --fc-neutral-bg-color: #0f0f0f; }
-        .fc-theme-standard td, .fc-theme-standard th { border-color: #332b00; }
-        .fc-col-header-cell-cushion { color: #FFD700 !important; font-weight: bold; text-decoration: none; }
-        .fc-daygrid-day-number { color: #ccc !important; text-decoration: none; font-size: 13px; padding: 6px !important; }
-        .fc-event { background-color: rgba(255, 215, 0, 0.2); border: 1px solid #FFD700; color: #FFD700; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-        .fc-toolbar-title { color: #FFD700 !important; font-size: 1.2rem !important; font-weight: bold; }
-        .fc-button-primary { background-color: #332b00 !important; border-color: #FFD700 !important; color: #FFD700 !important; font-size: 12px !important; }
-        .fc-button-primary:hover { background-color: #FFD700 !important; color: #0f0f0f !important; }
-        .fc-button-active { background-color: #FFD700 !important; color: #0f0f0f !important; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -100,22 +88,53 @@
             </div>
         </div>
 
-        <!-- Cột Phải: Lịch Tháng & Danh Sách -->
+        <!-- Cột Phải: Lịch & Danh Sách -->
         <div class="lg:col-span-2 space-y-6">
-            <div class="bg-cardBg border border-borderGold rounded-xl p-4 flex justify-between items-center">
-                <div class="text-gold font-semibold text-sm"><i class="fa-regular fa-calendar-days mr-2"></i> Lịch Tổng Quan Tháng</div>
+            <!-- Nút chuyển đổi giao diện: Lịch Tháng / Lịch Tuần / Danh Sách -->
+            <div class="bg-cardBg border border-borderGold rounded-xl p-4 flex flex-wrap justify-between items-center gap-4">
+                <div class="flex space-x-2">
+                    <button onclick="switchView('month')" id="btn-month" class="px-4 py-2 rounded-lg text-sm font-semibold bg-gold text-darkBg">Lịch Tháng</button>
+                    <button onclick="switchView('week')" id="btn-week" class="px-4 py-2 rounded-lg text-sm font-semibold bg-darkBg text-gray-400 border border-borderGold hover:text-gold">Lịch Tuần (Chi Tiết Giờ)</button>
+                    <button onclick="switchView('list')" id="btn-list" class="px-4 py-2 rounded-lg text-sm font-semibold bg-darkBg text-gray-400 border border-borderGold hover:text-gold">Danh Sách Việc</button>
+                </div>
                 <div id="loading-status" class="text-xs text-gold animate-pulse hidden"><i class="fa-solid fa-rotate mr-1"></i> Đang đồng bộ...</div>
             </div>
 
-            <!-- Khung Lịch Tháng chuẩn xác -->
-            <div class="bg-cardBg border border-borderGold rounded-xl p-4">
-                <div id="calendar" class="text-sm"></div>
-            </div>
+            <div class="bg-cardBg border border-borderGold rounded-xl p-5 min-h-[450px]">
+                <!-- VIEW 1: LỊCH THÁNG (Hiện tên + giờ trực tiếp) -->
+                <div id="month-view">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="month-title" class="text-lg font-bold text-gold">Tháng ...</h3>
+                        <div class="space-x-2">
+                            <button onclick="changeMonth(-1)" class="p-2 bg-darkBg border border-borderGold rounded hover:text-gold"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button onclick="changeMonth(1)" class="p-2 bg-darkBg border border-borderGold rounded hover:text-gold"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 text-center font-semibold text-xs text-gray-400 mb-2">
+                        <div class="text-red-400">CN</div><div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div>
+                    </div>
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-2 text-center text-sm"></div>
+                </div>
 
-            <!-- Danh Sách Việc Cần Làm -->
-            <div class="bg-cardBg border border-borderGold rounded-xl p-5">
-                <h3 class="text-lg font-bold text-gold mb-3">Danh Sách Việc Cần Làm</h3>
-                <div id="events-container" class="space-y-2"></div>
+                <!-- VIEW 2: LỊCH TUẦN (Chia khung giờ chi tiết) -->
+                <div id="week-view" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="week-title" class="text-lg font-bold text-gold">Lịch Chi Tiết Theo Tuần</h3>
+                        <div class="space-x-2">
+                            <button onclick="changeWeek(-1)" class="p-2 bg-darkBg border border-borderGold rounded hover:text-gold"><i class="fa-solid fa-chevron-left"></i> Tuần trước</button>
+                            <button onclick="changeWeek(1)" class="p-2 bg-darkBg border border-borderGold rounded hover:text-gold">Tuần sau <i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <div id="week-grid" class="min-w-[700px] space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- VIEW 3: DANH SÁCH VIỆC CẦN LÀM -->
+                <div id="list-view" class="hidden space-y-3">
+                    <h3 class="text-lg font-bold text-gold mb-2">Danh Sách Việc & Tích Xóa</h3>
+                    <div id="events-container" class="space-y-2"></div>
+                </div>
             </div>
         </div>
     </main>
@@ -123,28 +142,13 @@
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz0IU2-X0NU9h5F9l0rY3wTQklX1tYZKkF7x3vRwC-IrzqHKXXB351NQrvT-_iaTQ0M/exec";
 
-        let calendar;
         let eventsData = [];
+        let currentDate = new Date();
+        let weekStartDate = new Date();
         let timerInterval = null;
         let timeLeft = 25 * 60;
 
         document.getElementById('current-date-display').innerText = new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-        document.addEventListener('DOMContentLoaded', function() {
-            var calendarEl = document.getElementById('calendar');
-            calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                locale: 'vi',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth'
-                },
-                events: []
-            });
-            calendar.render();
-            fetchEvents();
-        });
 
         async function fetchEvents() {
             if (SCRIPT_URL.includes("YOUR_GOOGLE_")) return;
@@ -154,47 +158,19 @@
                 let rawData = await response.json();
                 
                 eventsData = rawData.map(ev => {
-                    // Chuẩn hóa ngày tháng tuyệt đối tránh lỗi lệch múi giờ
-                    let cleanDate = "";
-                    if (ev.date) {
-                        let temp = String(ev.date).trim();
-                        if (temp.includes('T')) {
-                            cleanDate = temp.split('T')[0];
-                        } else if (temp.length >= 10) {
-                            cleanDate = temp.substring(0, 10);
-                        } else {
-                            cleanDate = temp;
-                        }
-                    }
-
-                    return {
-                        id: String(ev.id),
-                        title: ev.title,
-                        time: ev.time || "",
-                        start: cleanDate,
-                        description: ev.description || ""
-                    };
+                    let d = String(ev.date || "").trim();
+                    if (d.includes('T')) d = d.split('T')[0];
+                    else if (d.length >= 10) d = d.substring(0, 10);
+                    return { ...ev, date: d };
                 });
 
-                updateCalendarEvents();
+                renderCalendar();
+                renderWeekView();
                 renderListView();
             } catch (error) {
                 console.error("Lỗi tải dữ liệu:", error);
             }
             showLoading(false);
-        }
-
-        function updateCalendarEvents() {
-            calendar.removeAllEvents();
-            eventsData.forEach(ev => {
-                // Hiển thị trực tiếp: [Giờ] + [Tên sự kiện] vào đúng ô ngày
-                let displayTitle = ev.time ? `${ev.time} - ${ev.title}` : ev.title;
-                calendar.addEvent({
-                    id: ev.id,
-                    title: displayTitle,
-                    start: ev.start
-                });
-            });
         }
 
         async function handleFormSubmit(e) {
@@ -205,15 +181,14 @@
             const description = document.getElementById('event-desc').value;
             const id = 'EV-' + Date.now();
 
-            // Đẩy ngay lập tức lên giao diện web
-            const newEvent = { id, title, time, start: date, description };
-            eventsData.push(newEvent);
-            updateCalendarEvents();
+            // Đẩy ngay vào mảng web để hiển thị tức thì
+            eventsData.push({ id, title, date, time, description, status: "Chưa xong" });
+            renderCalendar();
+            renderWeekView();
             renderListView();
 
             document.getElementById('event-form').reset();
 
-            // Gửi ngầm về Google Sheet
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -228,9 +203,10 @@
 
         async function completeEvent(id) {
             if(!confirm("Bạn có chắc muốn hoàn thành và xóa sự kiện này không?")) return;
-
+            
             eventsData = eventsData.filter(ev => ev.id !== id);
-            updateCalendarEvents();
+            renderCalendar();
+            renderWeekView();
             renderListView();
 
             try {
@@ -245,6 +221,156 @@
             }
         }
 
+        function showLoading(show) {
+            const el = document.getElementById('loading-status');
+            if(show) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+
+        function switchView(view) {
+            const monthView = document.getElementById('month-view');
+            const weekView = document.getElementById('week-view');
+            const listView = document.getElementById('list-view');
+            
+            const btnMonth = document.getElementById('btn-month');
+            const btnWeek = document.getElementById('btn-week');
+            const btnList = document.getElementById('btn-list');
+
+            monthView.classList.add('hidden');
+            weekView.classList.add('hidden');
+            listView.classList.add('hidden');
+
+            btnMonth.className = "px-4 py-2 rounded-lg text-sm font-semibold bg-darkBg text-gray-400 border border-borderGold hover:text-gold";
+            btnWeek.className = "px-4 py-2 rounded-lg text-sm font-semibold bg-darkBg text-gray-400 border border-borderGold hover:text-gold";
+            btnList.className = "px-4 py-2 rounded-lg text-sm font-semibold bg-darkBg text-gray-400 border border-borderGold hover:text-gold";
+
+            if (view === 'month') {
+                monthView.classList.remove('hidden');
+                btnMonth.className = "px-4 py-2 rounded-lg text-sm font-semibold bg-gold text-darkBg";
+                renderCalendar();
+            } else if (view === 'week') {
+                weekView.classList.remove('hidden');
+                btnWeek.className = "px-4 py-2 rounded-lg text-sm font-semibold bg-gold text-darkBg";
+                renderWeekView();
+            } else {
+                listView.classList.remove('hidden');
+                btnList.className = "px-4 py-2 rounded-lg text-sm font-semibold bg-gold text-darkBg";
+                renderListView();
+            }
+        }
+
+        // 1. RENDER LỊCH THÁNG (Hiện tên sự kiện + giờ trực tiếp vào ô ngày)
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            document.getElementById('month-title').innerText = `Tháng ${month + 1} / ${year}`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const totalDays = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div class="p-2 text-gray-700"></div>`;
+            }
+
+            for (let day = 1; day <= totalDays; day++) {
+                const mStr = String(month + 1).padStart(2, '0');
+                const dStr = String(day).padStart(2, '0');
+                const targetDateStr = `${year}-${mStr}-${dStr}`;
+
+                const dayEvents = eventsData.filter(ev => ev.date === targetDateStr);
+
+                let eventsHtml = '';
+                dayEvents.forEach(ev => {
+                    eventsHtml += `<div class="bg-gold/20 text-gold text-[10px] px-1 py-0.5 rounded truncate mt-1 font-semibold" title="${ev.time} - ${ev.title}">🕒 ${ev.time || ''} ${ev.title}</div>`;
+                });
+
+                grid.innerHTML += `
+                    <div class="p-1.5 h-24 border border-borderGold/50 rounded-lg flex flex-col justify-start bg-darkBg relative hover:border-gold transition overflow-hidden text-left">
+                        <span class="text-xs font-semibold ${dayEvents.length > 0 ? 'text-gold font-bold' : 'text-gray-300'}">${day}</span>
+                        <div class="mt-1 space-y-1 overflow-y-auto max-h-16 w-full">
+                            ${eventsHtml}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            renderCalendar();
+        }
+
+        // 2. RENDER LỊCH TUẦN (Chia theo các ngày trong tuần kèm giờ cụ thể)
+        function renderWeekView() {
+            const container = document.getElementById('week-grid');
+            container.innerHTML = '';
+            
+            // Lấy ra các ngày trong tuần hiện tại
+            let startOfWeek = new Date(weekStartDate);
+            let dayOfWeek = startOfWeek.getDay();
+            let diff = startOfWeek.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Bắt đầu từ thứ 2
+            startOfWeek.setDate(diff);
+
+            let weekDays = [];
+            for (let i = 0; i < 7; i++) {
+                let nextDay = new Date(startOfWeek);
+                nextDay.setDate(startOfWeek.getDate() + i);
+                weekDays.push(nextDay);
+            }
+
+            let startStr = weekDays[0].toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit'});
+            let endStr = weekDays[6].toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit'});
+            document.getElementById('week-title').innerText = `Lịch Tuần (${startStr} - ${endStr})`;
+
+            weekDays.forEach(dayObj => {
+                let y = dayObj.getFullYear();
+                let m = String(dayObj.getMonth() + 1).padStart(2, '0');
+                let d = String(dayObj.getDate()).padStart(2, '0');
+                let dateStr = `${y}-${m}-${d}`;
+                let dayName = dayObj.toLocaleDateString('vi-VN', {weekday: 'long'});
+
+                let dayEvents = eventsData.filter(ev => ev.date === dateStr);
+                let eventsHtml = '';
+
+                if (dayEvents.length === 0) {
+                    eventsHtml = `<p class="text-xs text-gray-500 italic">Không có sự kiện</p>`;
+                } else {
+                    dayEvents.forEach(ev => {
+                        eventsHtml += `
+                            <div class="bg-gold/15 border border-gold/40 p-2 rounded flex justify-between items-center text-xs">
+                                <div>
+                                    <span class="text-gold font-bold mr-2"><i class="fa-regular fa-clock mr-1"></i>${ev.time || 'Cả ngày'}</span>
+                                    <span class="text-white font-semibold">${ev.title}</span>
+                                    ${ev.description ? `<span class="text-gray-400 ml-2">(${ev.description})</span>` : ''}
+                                </div>
+                                <button onclick="completeEvent('${ev.id}')" class="text-red-400 hover:text-red-300 text-xs px-2 py-0.5 rounded border border-red-500/30">Xong</button>
+                            </div>
+                        `;
+                    });
+                }
+
+                container.innerHTML += `
+                    <div class="bg-darkBg border border-borderGold p-3 rounded-lg flex flex-col space-y-2">
+                        <div class="text-gold font-bold text-xs uppercase border-b border-borderGold pb-1 flex justify-between">
+                            <span>${dayName} (${d}/${m})</span>
+                        </div>
+                        <div class="space-y-1">
+                            ${eventsHtml}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function changeWeek(direction) {
+            weekStartDate.setDate(weekStartDate.getDate() + (direction * 7));
+            renderWeekView();
+        }
+
+        // 3. RENDER DANH SÁCH VIỆC
         function renderListView() {
             const container = document.getElementById('events-container');
             container.innerHTML = '';
@@ -260,7 +386,7 @@
                             <input type="checkbox" onclick="completeEvent('${ev.id}')" class="w-5 h-5 accent-gold cursor-pointer" title="Hoàn thành & xóa">
                             <div>
                                 <h4 class="text-gold font-semibold text-sm">${ev.title}</h4>
-                                <p class="text-xs text-gray-400"><i class="fa-regular fa-calendar mr-1"></i>${ev.start} - <i class="fa-regular fa-clock mr-1"></i>${ev.time || 'Cả ngày'}</p>
+                                <p class="text-xs text-gray-400"><i class="fa-regular fa-calendar mr-1"></i>${ev.date} - <i class="fa-regular fa-clock mr-1"></i>${ev.time || 'Cả ngày'}</p>
                                 ${ev.description ? `<p class="text-xs text-gray-500 mt-1">${ev.description}</p>` : ''}
                             </div>
                         </div>
@@ -268,12 +394,6 @@
                     </div>
                 `;
             });
-        }
-
-        function showLoading(show) {
-            const el = document.getElementById('loading-status');
-            if(show) el.classList.remove('hidden');
-            else el.classList.add('hidden');
         }
 
         // Timer Logic
@@ -315,6 +435,8 @@
                 });
             }
         }
+
+        fetchEvents();
     </script>
 </body>
 </html>
