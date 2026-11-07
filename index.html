@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lịch Cá Nhân - Đam Mê & Tập Trung</title>
+    <title>Lịch Cá Nhân</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -28,11 +28,10 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <!-- Header -->
     <header class="border-b border-borderGold bg-cardBg py-4 px-6 flex justify-between items-center">
         <div class="flex items-center space-x-3">
             <i class="fa-solid fa-crown text-gold text-2xl gold-glow"></i>
-            <h1 class="text-xl font-bold text-gold tracking-wide">NHẬT KÝ & LỊCH TRÌNH</h1>
+            <h1 class="text-xl font-bold text-gold tracking-wide">LỊCH TRÌNH</h1>
         </div>
         <div class="flex items-center space-x-4">
             <button onclick="requestNotificationPermission()" class="text-xs bg-borderGold text-gold px-3 py-1.5 rounded-lg border border-gold/30 hover:bg-gold/20 transition">
@@ -42,12 +41,10 @@
         </div>
     </header>
 
-    <!-- Main Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         <!-- Cột Trái: Nhập liệu & Pomodoro -->
         <div class="space-y-6">
-            <!-- Form Thêm Sự Kiện -->
             <div class="bg-cardBg border border-borderGold rounded-xl p-5 border-gold-glow">
                 <h2 class="text-lg font-semibold text-gold mb-4 flex items-center">
                     <i class="fa-solid fa-pen-nib mr-2"></i> Thêm Sự Kiện & Ghi Chú
@@ -77,7 +74,6 @@
                 </form>
             </div>
 
-            <!-- Pomodoro Focus Timer -->
             <div class="bg-cardBg border border-borderGold rounded-xl p-5 border-gold-glow text-center">
                 <h2 class="text-lg font-semibold text-gold mb-2 flex items-center justify-center">
                     <i class="fa-solid fa-clock mr-2"></i> Bộ Đếm Thời Gian Tập Trung
@@ -169,14 +165,13 @@
                 });
                 
                 document.getElementById('event-form').reset();
-                setTimeout(fetchEvents, 1500);
+                setTimeout(fetchEvents, 2000);
             } catch (error) {
                 alert("Có lỗi xảy ra khi lưu!");
                 showLoading(false);
             }
         }
 
-        // Tích vào ô vuông để hoàn thành và xóa khỏi Sheet/Web
         async function completeEvent(id) {
             if(!confirm("Bạn có chắc muốn hoàn thành và xóa sự kiện này không?")) return;
             showLoading(true);
@@ -187,7 +182,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'delete', id: id })
                 });
-                setTimeout(fetchEvents, 1500);
+                setTimeout(fetchEvents, 2000);
             } catch (error) {
                 alert("Lỗi khi cập nhật trạng thái!");
                 showLoading(false);
@@ -219,7 +214,7 @@
             }
         }
 
-        // Render Lịch Tháng có hiện tên sự kiện trực tiếp
+        // Hiển thị tên sự kiện trực tiếp lên ô ngày trong lịch tháng
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
             grid.innerHTML = '';
@@ -236,18 +231,21 @@
             }
 
             for (let day = 1; day <= totalDays; day++) {
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const mStr = String(month + 1).padStart(2, '0');
+                const dStr = String(day).padStart(2, '0');
+                const dateStr = `${year}-${mStr}-${dStr}`; // Format chuẩn YYYY-MM-DD
+
                 const dayEvents = eventsData.filter(ev => ev.date === dateStr);
 
                 let eventsHtml = '';
                 dayEvents.forEach(ev => {
-                    eventsHtml += `<div class="bg-gold/20 text-gold text-[10px] px-1 py-0.5 rounded truncate mt-1" title="${ev.title}">${ev.title}</div>`;
+                    eventsHtml += `<div class="bg-gold/20 text-gold text-[11px] px-1.5 py-0.5 rounded truncate mt-1 font-medium" title="${ev.title}">${ev.title}</div>`;
                 });
 
                 grid.innerHTML += `
-                    <div class="p-2 h-24 border border-borderGold/50 rounded-lg flex flex-col justify-start bg-darkBg relative hover:border-gold transition overflow-hidden">
-                        <span class="text-xs font-semibold ${dayEvents.length > 0 ? 'text-gold font-bold' : 'text-gray-300'} text-left">${day}</span>
-                        <div class="mt-1 space-y-1 overflow-y-auto max-h-14 w-full scrollbar-none">
+                    <div class="p-2 h-24 border border-borderGold/50 rounded-lg flex flex-col justify-start bg-darkBg relative hover:border-gold transition overflow-hidden text-left">
+                        <span class="text-xs font-semibold ${dayEvents.length > 0 ? 'text-gold font-bold' : 'text-gray-300'}">${day}</span>
+                        <div class="mt-1 space-y-1 overflow-y-auto max-h-14 w-full">
                             ${eventsHtml}
                         </div>
                     </div>
@@ -260,7 +258,6 @@
             renderCalendar();
         }
 
-        // Render danh sách có ô checkbox
         function renderListView() {
             const container = document.getElementById('events-container');
             container.innerHTML = '';
