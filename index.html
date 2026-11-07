@@ -140,13 +140,13 @@
                 let response = await fetch(SCRIPT_URL);
                 let rawData = await response.json();
                 
-                // XU LÝ CHUẨN HÓA NGÀY THÁNG TRỰC TIẾP TẠI WEB (BẤT CHẤP ĐỊNH DẠNG TRÊN SHEET)
+                // Chuẩn hóa ngày cực kỳ an toàn: lấy đúng 10 ký tự đầu tiên (YYYY-MM-DD)
                 eventsData = rawData.map(ev => {
-                    let cleanDate = ev.date;
-                    if (cleanDate.includes('T')) {
-                        cleanDate = cleanDate.split('T')[0]; // Cắt lấy đúng phần YYYY-MM-DD
+                    let d = String(ev.date || "").trim();
+                    if (d.length >= 10) {
+                        d = d.substring(0, 10);
                     }
-                    return { ...ev, date: cleanDate };
+                    return { ...ev, date: d };
                 });
 
                 renderCalendar();
@@ -224,7 +224,7 @@
             }
         }
 
-        // Render Lịch Tháng
+        // Render Lịch Tháng - So sánh chuỗi ngày trực tiếp
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
             grid.innerHTML = '';
@@ -243,8 +243,9 @@
             for (let day = 1; day <= totalDays; day++) {
                 const mStr = String(month + 1).padStart(2, '0');
                 const dStr = String(day).padStart(2, '0');
-                const dateStr = `${year}-${mStr}-${dStr}`; // Chuẩn YYYY-MM-DD
+                const dateStr = `${year}-${mStr}-${dStr}`; // YYYY-MM-DD
 
+                // Lọc sự kiện khớp chuẩn ngày
                 const dayEvents = eventsData.filter(ev => ev.date === dateStr);
 
                 let eventsHtml = '';
