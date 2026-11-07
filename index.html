@@ -138,7 +138,17 @@
             showLoading(true);
             try {
                 let response = await fetch(SCRIPT_URL);
-                eventsData = await response.json();
+                let rawData = await response.json();
+                
+                // XU LÝ CHUẨN HÓA NGÀY THÁNG TRỰC TIẾP TẠI WEB (BẤT CHẤP ĐỊNH DẠNG TRÊN SHEET)
+                eventsData = rawData.map(ev => {
+                    let cleanDate = ev.date;
+                    if (cleanDate.includes('T')) {
+                        cleanDate = cleanDate.split('T')[0]; // Cắt lấy đúng phần YYYY-MM-DD
+                    }
+                    return { ...ev, date: cleanDate };
+                });
+
                 renderCalendar();
                 renderListView();
             } catch (error) {
@@ -214,7 +224,7 @@
             }
         }
 
-        // Hiển thị tên sự kiện trực tiếp lên ô ngày trong lịch tháng
+        // Render Lịch Tháng
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
             grid.innerHTML = '';
@@ -233,7 +243,7 @@
             for (let day = 1; day <= totalDays; day++) {
                 const mStr = String(month + 1).padStart(2, '0');
                 const dStr = String(day).padStart(2, '0');
-                const dateStr = `${year}-${mStr}-${dStr}`; // Format chuẩn YYYY-MM-DD
+                const dateStr = `${year}-${mStr}-${dStr}`; // Chuẩn YYYY-MM-DD
 
                 const dayEvents = eventsData.filter(ev => ev.date === dateStr);
 
