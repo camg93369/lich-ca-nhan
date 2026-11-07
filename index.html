@@ -6,7 +6,7 @@
     <title>Lịch Cá Nhân - Đam Mê & Tập Trung</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- FullCalendar CSS -->
+    <!-- FullCalendar CSS & JS -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
     <script>
         tailwind.config = {
@@ -26,12 +26,12 @@
         body { background-color: #0f0f0f; color: #e5e5e5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .gold-glow { text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
         .border-gold-glow { box-shadow: 0 0 15px rgba(255, 215, 0, 0.15); }
-        /* Tùy chỉnh màu sắc FullCalendar cho hợp tông Dark & Gold */
-        .fc { --fc-border-color: #332b00; --fc-page-bg-color: #1a1a1a; --fc-neutral-bg-color: #0f0f0f; --fc-list-event-hover-bg-color: #262000; }
+        /* Tùy chỉnh màu sắc lịch tối & vàng gold sang trọng */
+        .fc { --fc-border-color: #332b00; --fc-page-bg-color: #1a1a1a; --fc-neutral-bg-color: #0f0f0f; }
         .fc-theme-standard td, .fc-theme-standard th { border-color: #332b00; }
         .fc-col-header-cell-cushion { color: #FFD700 !important; font-weight: bold; text-decoration: none; }
         .fc-daygrid-day-number { color: #ccc !important; text-decoration: none; font-size: 13px; padding: 6px !important; }
-        .fc-event { background-color: rgba(255, 215, 0, 0.15); border: 1px solid #FFD700; color: #FFD700; padding: 2px 4px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+        .fc-event { background-color: rgba(255, 215, 0, 0.2); border: 1px solid #FFD700; color: #FFD700; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
         .fc-toolbar-title { color: #FFD700 !important; font-size: 1.2rem !important; font-weight: bold; }
         .fc-button-primary { background-color: #332b00 !important; border-color: #FFD700 !important; color: #FFD700 !important; font-size: 12px !important; }
         .fc-button-primary:hover { background-color: #FFD700 !important; color: #0f0f0f !important; }
@@ -100,19 +100,19 @@
             </div>
         </div>
 
-        <!-- Cột Phải: Lịch & Danh sách công việc -->
+        <!-- Cột Phải: Lịch Tháng & Danh Sách -->
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-cardBg border border-borderGold rounded-xl p-4 flex justify-between items-center">
                 <div class="text-gold font-semibold text-sm"><i class="fa-regular fa-calendar-days mr-2"></i> Lịch Tổng Quan Tháng</div>
                 <div id="loading-status" class="text-xs text-gold animate-pulse hidden"><i class="fa-solid fa-rotate mr-1"></i> Đang đồng bộ...</div>
             </div>
 
-            <!-- Khung Lịch chuẩn FullCalendar (Hiện tên sự kiện + giờ trực tiếp trên ô) -->
+            <!-- Khung Lịch Tháng chuẩn xác -->
             <div class="bg-cardBg border border-borderGold rounded-xl p-4">
                 <div id="calendar" class="text-sm"></div>
             </div>
 
-            <!-- Danh sách việc cần làm có ô tích xóa -->
+            <!-- Danh Sách Việc Cần Làm -->
             <div class="bg-cardBg border border-borderGold rounded-xl p-5">
                 <h3 class="text-lg font-bold text-gold mb-3">Danh Sách Việc Cần Làm</h3>
                 <div id="events-container" class="space-y-2"></div>
@@ -138,7 +138,7 @@
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'dayGridMonth,timeGridWeek'
+                    right: 'dayGridMonth'
                 },
                 events: []
             });
@@ -153,14 +153,28 @@
                 let response = await fetch(SCRIPT_URL);
                 let rawData = await response.json();
                 
-                eventsData = rawData.map(ev => ({
-                    id: String(ev.id),
-                    title: `${ev.time ? ev.time + ' - ' : ''}${ev.title}`, // Hiện kèm giờ và tên sự kiện
-                    start: String(ev.date).split('T')[0],
-                    description: ev.description,
-                    time: ev.time,
-                    rawTitle: ev.title
-                }));
+                eventsData = rawData.map(ev => {
+                    // Chuẩn hóa ngày tháng tuyệt đối tránh lỗi lệch múi giờ
+                    let cleanDate = "";
+                    if (ev.date) {
+                        let temp = String(ev.date).trim();
+                        if (temp.includes('T')) {
+                            cleanDate = temp.split('T')[0];
+                        } else if (temp.length >= 10) {
+                            cleanDate = temp.substring(0, 10);
+                        } else {
+                            cleanDate = temp;
+                        }
+                    }
+
+                    return {
+                        id: String(ev.id),
+                        title: ev.title,
+                        time: ev.time || "",
+                        start: cleanDate,
+                        description: ev.description || ""
+                    };
+                });
 
                 updateCalendarEvents();
                 renderListView();
@@ -173,9 +187,11 @@
         function updateCalendarEvents() {
             calendar.removeAllEvents();
             eventsData.forEach(ev => {
+                // Hiển thị trực tiếp: [Giờ] + [Tên sự kiện] vào đúng ô ngày
+                let displayTitle = ev.time ? `${ev.time} - ${ev.title}` : ev.title;
                 calendar.addEvent({
                     id: ev.id,
-                    title: ev.title,
+                    title: displayTitle,
                     start: ev.start
                 });
             });
@@ -189,22 +205,15 @@
             const description = document.getElementById('event-desc').value;
             const id = 'EV-' + Date.now();
 
-            // Đẩy ngay lập tức lên lịch hiển thị trên web không cần chờ
-            const newEventObj = {
-                id,
-                title: `${time ? time + ' - ' : ''}${title}`,
-                start: date,
-                description,
-                time,
-                rawTitle: title
-            };
-            eventsData.push(newEventObj);
+            // Đẩy ngay lập tức lên giao diện web
+            const newEvent = { id, title, time, start: date, description };
+            eventsData.push(newEvent);
             updateCalendarEvents();
             renderListView();
 
             document.getElementById('event-form').reset();
 
-            // Gửi ngầm lên Google Sheet
+            // Gửi ngầm về Google Sheet
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -240,7 +249,7 @@
             const container = document.getElementById('events-container');
             container.innerHTML = '';
             if (eventsData.length === 0) {
-                container.innerHTML = `<p class="text-gray-500 text-sm">Chưa có sự kiện nào được ghi nhận trên Google Sheet.</p>`;
+                container.innerHTML = `<p class="text-gray-500 text-sm">Chưa có sự kiện nào được ghi nhận.</p>`;
                 return;
             }
 
@@ -250,7 +259,7 @@
                         <div class="flex items-center space-x-3">
                             <input type="checkbox" onclick="completeEvent('${ev.id}')" class="w-5 h-5 accent-gold cursor-pointer" title="Hoàn thành & xóa">
                             <div>
-                                <h4 class="text-gold font-semibold text-sm">${ev.rawTitle || ev.title}</h4>
+                                <h4 class="text-gold font-semibold text-sm">${ev.title}</h4>
                                 <p class="text-xs text-gray-400"><i class="fa-regular fa-calendar mr-1"></i>${ev.start} - <i class="fa-regular fa-clock mr-1"></i>${ev.time || 'Cả ngày'}</p>
                                 ${ev.description ? `<p class="text-xs text-gray-500 mt-1">${ev.description}</p>` : ''}
                             </div>
